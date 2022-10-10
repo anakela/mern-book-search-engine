@@ -1,18 +1,24 @@
 // see SignupForm.js for comments
-import React, { useState } from 'react';
+import React, { useState, useMutation } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 
 import { loginUser } from '../utils/API';
 import Auth from '../utils/auth';
 
+import { LOGIN_USER } from '../utils/mutations';
+
 const LoginForm = () => {
+  const [login, { error, data }] = useMutation(LOGIN_USER);
   const [userFormData, setUserFormData] = useState({ email: '', password: '' });
   const [validated] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setUserFormData({ ...userFormData, [name]: value });
+    setUserFormData({
+      ...userFormData,
+      [name]: value
+    });
   };
 
   const handleFormSubmit = async (event) => {
@@ -26,15 +32,21 @@ const LoginForm = () => {
     }
 
     try {
-      const response = await loginUser(userFormData);
+      const { data } = await login({
+        variables: { ...login },
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
+      Auth.loggedIn(data.login.token);
 
-      const { token, user } = await response.json();
-      console.log(user);
-      Auth.login(token);
+      // const response = await loginUser(userFormData);
+
+      // if (!response.ok) {
+      //   throw new Error('something went wrong!');
+      // }
+
+      // const { token, user } = await response.json();
+      // console.log(user);
+      // Auth.login(token);
     } catch (err) {
       console.error(err);
       setShowAlert(true);

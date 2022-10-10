@@ -2,13 +2,11 @@ import React, { useState, useEffect, useMutation } from 'react';
 import { Jumbotron, Container, Col, Form, Button, Card, CardColumns } from 'react-bootstrap';
 
 import Auth from '../utils/auth';
-import { saveBook, searchGoogleBooks } from '../utils/API';
+import { searchGoogleBooks } from '../utils/API';
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
-
 import { SAVE_BOOK } from '../utils/mutations';
 
 const SearchBooks = () => {
-  const [saveBook, { error }] = useMutation(SAVE_BOOK);
   // create state for holding returned google api data
   const [searchedBooks, setSearchedBooks] = useState([]);
   // create state for holding our search field data
@@ -16,6 +14,8 @@ const SearchBooks = () => {
 
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
+
+  const [saveBook, { error }] = useMutation(SAVE_BOOK);
 
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
@@ -69,11 +69,10 @@ const SearchBooks = () => {
 
     try {
       const { data } = saveBook({
-        variables: { ...setSavedBookIds },
+        variables: { book: bookToSave },
       });
 
-      Auth.loggedIn(data.saveBook.token);
-      // const response = await saveBook(bookToSave, token);
+      setSavedBookIds([...savedBookIds, bookToSave.bookId]);
 
       // if (!response.ok) {
       //   throw new Error('something went wrong!');
@@ -84,6 +83,11 @@ const SearchBooks = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleRedirect = (link) => {
+    if (link) window.open(link, '_blank');
+    else return;
   };
 
   return (
@@ -130,6 +134,15 @@ const SearchBooks = () => {
                   <Card.Title>{book.title}</Card.Title>
                   <p className='small'>Authors: {book.authors}</p>
                   <Card.Text>{book.description}</Card.Text>
+                  {
+                    book.link
+                      ? <Button
+                        className='btn-block btn-success'
+                        onClick={() => handleRedirect(book.link)}>
+                        View on Google
+                      </Button>
+                      : ''
+                  }
                   {Auth.loggedIn() && (
                     <Button
                       disabled={savedBookIds?.some((savedBookId) => savedBookId === book.bookId)}
